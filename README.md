@@ -1,29 +1,27 @@
-##Perbedaan Versi Rentan dan Aman
-Repositori ini berisi dua versi kode sumber untuk demonstrasi keamanan perangkat lunak: versi rentan (vulnerable) dan versi aman (secure). Tujuan utama adalah untuk mengedukasi tentang kerentanan umum dalam pengembangan perangkat lunak dan bagaimana cara memperbaikinya.
+# README.md - Perbedaan Versi Rentan dan Aman
 
-#Deskripsi Proyek
-Proyek ini adalah contoh sederhana aplikasi web yang menerima input dari pengguna dan memprosesnya. Versi rentan mengandung kerentanan keamanan yang dapat dieksploitasi, sedangkan versi aman telah diperbaiki untuk mencegah eksploitasi tersebut.
+## Deskripsi
+Dokumen ini menjelaskan perbedaan antara versi rentan dan versi aman dari sistem login dan upload file pada portal mahasiswa. Tujuannya untuk memahami risiko keamanan seperti **SQL Injection** dan **Broken Access Control** serta cara mitigasinya.
 
+---
 
-#Kerentanan Utama
-SQL Injection: Input pengguna langsung dimasukkan ke dalam query SQL tanpa sanitasi, memungkinkan injeksi kode berbahaya.
+## 1. Versi Rentan
+Versi rentan menggunakan **input langsung dari pengguna** tanpa validasi atau proteksi. Contohnya:
 
-Contoh: Jika pengguna memasukkan ' OR '1'='1, query dapat mengembalikan semua data.
-Cross-Site Scripting (XSS): Output pengguna ditampilkan tanpa encoding, memungkinkan injeksi skrip JavaScript.
+- **Login:**
+  ```php
+  $sql = "SELECT id FROM users WHERE username = '$username' AND password = '$password'";
+  $result = $db->query($sql);
+Versi rentan dari sistem login dan upload file memiliki risiko keamanan serius: pada login, input pengguna langsung dimasukkan ke query SQL sehingga penyerang bisa melakukan SQL Injection, memungkinkan login tanpa password, mencuri data, atau bahkan menghapus data. Sedangkan pada upload file, file disimpan dengan nama asli di folder publik tanpa validasi ekstensi atau ukuran, sehingga file berbahaya dapat diunggah dan diakses sembarangan oleh siapa saja.  
 
-Contoh: Input seperti <script>alert('Hacked!')</script> akan dieksekusi di browser.
-Buffer Overflow (dalam konteks tertentu): Jika ada pemrosesan string tanpa batas, dapat menyebabkan overflow.
-
-
-#Versi Aman (Secure Version)
-Versi ini terletak di direktori secure/. Kode ini telah diperbaiki untuk mengatasi kerentanan di versi rentan.
-
-Perbaikan yang Diterapkan
-SQL Injection: Menggunakan parameterized queries atau ORM (seperti SQLAlchemy) untuk mencegah injeksi.
-
-Contoh: Query menggunakan placeholder seperti SELECT * FROM users WHERE username = ? dengan binding parameter.
-Cross-Site Scripting (XSS): Output pengguna di-encode menggunakan fungsi seperti html.escape() atau template engine yang aman (misalnya, Jinja2 dengan auto-escaping).
-
-Contoh: Input berbahaya akan ditampilkan sebagai teks biasa, bukan kode eksekusi.
-Buffer Overflow: Menambahkan validasi input dan batasan panjang string untuk mencegah overflow.
-
+## Versi Rentan
+  Versi aman memisahkan struktur SQL dan data, menambahkan kontrol akses, serta melakukan validasi file.
+  
+    $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE username = :u LIMIT 1");
+    $stmt->execute([':u' => $_POST['username']]);
+    $user = $stmt->fetch();
+    
+    if ($user && password_verify($_POST['password'], $user['password_hash'])) {
+        // login berhasil
+    }
+Versi aman menggunakan prepared statements untuk memisahkan data input dan perintah SQL, serta menyimpan password dalam bentuk hash, sehingga risiko SQL Injection hilang dan keamanan data pengguna lebih terjaga.
